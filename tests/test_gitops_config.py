@@ -3,6 +3,7 @@ import pytest
 
 from gitopscli.gitops_config import GitOpsConfig
 from gitopscli.gitops_exception import GitOpsException
+from gitopscli.preview_api.replacement import Replacement
 
 
 class GitOpsConfigTest(unittest.TestCase):
@@ -84,8 +85,8 @@ class GitOpsConfigTest(unittest.TestCase):
         self.assertEqual(
             config.replacements,
             [
-                GitOpsConfig.Replacement(path="a.b", variable=GitOpsConfig.Replacement.Variable.ROUTE_HOST),
-                GitOpsConfig.Replacement(path="c.d", variable=GitOpsConfig.Replacement.Variable.GIT_COMMIT),
+                Replacement(path="a.b", variable=Replacement.Variable.ROUTE_HOST),
+                Replacement(path="c.d", variable=Replacement.Variable.GIT_COMMIT),
             ],
         )
 

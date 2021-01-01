@@ -3,6 +3,9 @@ import unittest
 import shutil
 import logging
 from unittest.mock import call, Mock
+
+from gitopscli.preview_api.replacement import Replacement
+
 from gitopscli.io_api.yaml_util import update_yaml_file, YAMLException
 from gitopscli.git_api import GitRepo, GitRepoApi, GitRepoApiFactory, GitProvider
 from gitopscli.gitops_config import GitOpsConfig
@@ -49,8 +52,8 @@ class CreatePreviewCommandTest(MockMixin, unittest.TestCase):
             application_name="my-app",
             route_host_template="app.xy-{SHA256_8CHAR_BRANCH_HASH}.example.tld",
             replacements=[
-                GitOpsConfig.Replacement(path="image.tag", variable=GitOpsConfig.Replacement.Variable.GIT_COMMIT),
-                GitOpsConfig.Replacement(path="route.host", variable=GitOpsConfig.Replacement.Variable.ROUTE_HOST),
+                Replacement(path="image.tag", variable=Replacement.Variable.GIT_COMMIT),
+                Replacement(path="route.host", variable=Replacement.Variable.ROUTE_HOST),
             ],
         )
 

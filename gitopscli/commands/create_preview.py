@@ -7,6 +7,7 @@ from gitopscli.git_api import GitApiConfig, GitRepo, GitRepoApi, GitRepoApiFacto
 from gitopscli.io_api.yaml_util import update_yaml_file, YAMLException
 from gitopscli.gitops_config import GitOpsConfig
 from gitopscli.gitops_exception import GitOpsException
+from gitopscli.preview_api.replacement import Replacement
 from .common import load_gitops_config
 from .command import Command
 
@@ -98,12 +99,12 @@ class CreatePreviewCommand(Command):
         self.__update_yaml_file(git_repo, f"{preview_namespace}/Chart.yaml", "name", preview_namespace)
         return True
 
-    def __get_value_for_variable(self, gitops_config: GitOpsConfig, variable: GitOpsConfig.Replacement.Variable) -> str:
-        mapping: Dict[GitOpsConfig.Replacement.Variable, Callable[[], str]] = {
-            GitOpsConfig.Replacement.Variable.ROUTE_HOST: lambda: gitops_config.get_route_host(self.__args.preview_id),
-            GitOpsConfig.Replacement.Variable.GIT_COMMIT: lambda: self.__args.git_hash,
+    def __get_value_for_variable(self, gitops_config: GitOpsConfig, variable: Replacement.Variable) -> str:
+        mapping: Dict[Replacement.Variable, Callable[[], str]] = {
+            Replacement.Variable.ROUTE_HOST: lambda: gitops_config.get_route_host(self.__args.preview_id),
+            Replacement.Variable.GIT_COMMIT: lambda: self.__args.git_hash,
         }
-        assert set(mapping.keys()) == set(GitOpsConfig.Replacement.Variable), "variable to value mapping not complete"
+        assert set(mapping.keys()) == set(Replacement.Variable), "variable to value mapping not complete"
         return mapping[variable]()
 
     def __replace_values(self, git_repo: GitRepo, gitops_config: GitOpsConfig) -> bool:

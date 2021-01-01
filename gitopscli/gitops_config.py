@@ -1,26 +1,13 @@
 import hashlib
 from dataclasses import dataclass
-from enum import Enum, auto
 from typing import List, Any
 
 from gitopscli.gitops_exception import GitOpsException
+from gitopscli.preview_api.replacement import Replacement
 
 
 @dataclass(frozen=True)
 class GitOpsConfig:
-    @dataclass(frozen=True)
-    class Replacement:
-        class Variable(Enum):
-            GIT_COMMIT = auto()
-            ROUTE_HOST = auto()
-
-        path: str
-        variable: Variable
-
-        def __post_init__(self) -> None:
-            assert isinstance(self.path, str), "path of wrong type!"
-            assert isinstance(self.variable, self.Variable), "variable of wrong type!"
-
     application_name: str
     team_config_org: str
     team_config_repo: str
@@ -33,8 +20,8 @@ class GitOpsConfig:
         assert isinstance(self.team_config_repo, str), "team_config_repo of wrong type!"
         assert isinstance(self.route_host_template, str), "route_host_template of wrong type!"
         assert isinstance(self.replacements, list), "replacements of wrong type!"
-        for index, replacement in enumerate(self.replacements):
-            assert isinstance(replacement, self.Replacement), f"replacement[{index}] of wrong type!"
+        for index, replacement in enumerate(Replacement.Variable):
+            assert isinstance(replacement, Replacement.Variable), f"replacement[{index}] of wrong type!"
 
     def get_route_host(self, preview_id: str) -> str:
         hashed_preview_id = self.__create_hashed_preview_id(preview_id)
@@ -71,7 +58,7 @@ class GitOpsConfig:
                 raise GitOpsException(f"Item '{key}' should be a list in GitOps config!")
             return value
 
-        replacements: List[GitOpsConfig.Replacement] = []
+        replacements: List[Replacement] = []
         replacement_dicts = get_list_value("previewConfig.replace")
         for index, replacement_dict in enumerate(replacement_dicts):
             if not isinstance(replacement_dict, dict):
@@ -91,14 +78,14 @@ class GitOpsConfig:
                     f"Item 'previewConfig.replace.[{index}].variable' should be a string in GitOps config!"
                 )
             try:
-                variable = GitOpsConfig.Replacement.Variable[variable_str]
+                variable = Replacement.Variable[variable_str]
             except KeyError as ex:
-                possible_values = ", ".join(sorted([v.name for v in GitOpsConfig.Replacement.Variable]))
+                possible_values = ", ".join(sorted([v.name for v in Replacement.Variable]))
                 raise GitOpsException(
                     f"Item 'previewConfig.replace.[{index}].variable' should be one of the following values in "
                     f"GitOps config: {possible_values}"
                 ) from ex
-            replacements.append(GitOpsConfig.Replacement(path=path, variable=variable))
+            replacements.append(Replacement(path=path, variable=variable))
 
         return GitOpsConfig(
             application_name=get_string_value("deploymentConfig.applicationName"),
