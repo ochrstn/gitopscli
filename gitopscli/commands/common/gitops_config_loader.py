@@ -1,7 +1,7 @@
 from gitopscli.git_api import GitApiConfig, GitRepo, GitRepoApiFactory
 from gitopscli.gitops_config import GitOpsConfig
 from gitopscli.gitops_exception import GitOpsException
-from gitopscli.io_api.yaml_util import yaml_file_load
+from gitopscli.io_api.yaml_file import YamlFile
 
 
 def load_gitops_config(git_api_config: GitApiConfig, organisation: str, repository_name: str) -> GitOpsConfig:
@@ -10,7 +10,7 @@ def load_gitops_config(git_api_config: GitApiConfig, organisation: str, reposito
         git_repo.clone()
         gitops_config_file_path = git_repo.get_full_file_path(".gitops.config.yaml")
         try:
-            gitops_config_yaml = yaml_file_load(gitops_config_file_path)
+            gitops_config_yaml = YamlFile.read(gitops_config_file_path)
+            return GitOpsConfig.from_yaml_file(gitops_config_yaml)
         except FileNotFoundError as ex:
             raise GitOpsException("No such file: .gitops.config.yaml") from ex
-    return GitOpsConfig.from_yaml(gitops_config_yaml)

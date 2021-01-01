@@ -3,6 +3,7 @@ from unittest.mock import call
 import pytest
 from gitopscli.gitops_exception import GitOpsException
 from gitopscli.gitops_config import GitOpsConfig
+from gitopscli.io_api.yaml_file import YamlFile
 from gitopscli.io_api.yaml_util import yaml_file_load
 from gitopscli.git_api import GitApiConfig, GitProvider, GitRepo, GitRepoApi, GitRepoApiFactory
 from gitopscli.commands.common.gitops_config_loader import load_gitops_config
@@ -18,10 +19,10 @@ class GitOpsConfigLoaderTest(MockMixin, unittest.TestCase):
         self.init_mock_manager(load_gitops_config)
 
         self.gitops_config_mock = self.monkey_patch(GitOpsConfig)
-        self.gitops_config_mock.from_yaml.return_value = self.gitops_config_mock
+        self.gitops_config_mock.from_yaml_file.return_value = self.gitops_config_mock
 
-        self.yaml_file_load_mock = self.monkey_patch(yaml_file_load)
-        self.yaml_file_load_mock.return_value = {"dummy": "gitopsconfig"}
+        self.yaml_file_mock = self.monkey_patch(YamlFile)
+        self.yaml_file_mock.read.return_value = {"dummy": "gitopsconfig"}
 
         self.git_repo_api_mock = self.create_mock(GitRepoApi)
 
@@ -49,12 +50,12 @@ class GitOpsConfigLoaderTest(MockMixin, unittest.TestCase):
             call.GitRepo(self.git_repo_api_mock),
             call.GitRepo.clone(),
             call.GitRepo.get_full_file_path(".gitops.config.yaml"),
-            call.yaml_file_load("/repo-dir/.gitops.config.yaml"),
-            call.GitOpsConfig.from_yaml({"dummy": "gitopsconfig"}),
+            call.YamlFile.read("/repo-dir/.gitops.config.yaml"),
+            call.GitOpsConfig.from_yaml_file({"dummy": "gitopsconfig"}),
         ]
 
     def test_file_not_found(self):
-        self.yaml_file_load_mock.side_effect = FileNotFoundError("file not found")
+        self.yaml_file_mock.read.side_effect = FileNotFoundError("file not found")
 
         with pytest.raises(GitOpsException) as ex:
             load_gitops_config(git_api_config=self.git_api_config, organisation="ORGA", repository_name="REPO")
@@ -66,5 +67,5 @@ class GitOpsConfigLoaderTest(MockMixin, unittest.TestCase):
             call.GitRepo(self.git_repo_api_mock),
             call.GitRepo.clone(),
             call.GitRepo.get_full_file_path(".gitops.config.yaml"),
-            call.yaml_file_load("/repo-dir/.gitops.config.yaml"),
+            call.YamlFile.read("/repo-dir/.gitops.config.yaml"),
         ]

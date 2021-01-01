@@ -36,30 +36,9 @@ class GitOpsConfig:
         return hashlib.sha256(preview_id.encode("utf-8")).hexdigest()[:8]
 
     @staticmethod
-    def from_yaml(yaml: Any) -> "GitOpsConfig":
-        def get_value(key: str) -> Any:
-            keys = key.split(".")
-            data = yaml
-            for k in keys:
-                if not isinstance(data, dict) or k not in data:
-                    raise GitOpsException(f"Key '{key}' not found in GitOps config!")
-                data = data[k]
-            return data
-
-        def get_string_value(key: str) -> str:
-            value = get_value(key)
-            if not isinstance(value, str):
-                raise GitOpsException(f"Item '{key}' should be a string in GitOps config!")
-            return value
-
-        def get_list_value(key: str) -> List[Any]:
-            value = get_value(key)
-            if not isinstance(value, list):
-                raise GitOpsException(f"Item '{key}' should be a list in GitOps config!")
-            return value
-
+    def from_yaml_file(yaml_file: Any) -> "GitOpsConfig":
         replacements: List[Replacement] = []
-        replacement_dicts = get_list_value("previewConfig.replace")
+        replacement_dicts = yaml_file.get_list_value("previewConfig.replace")
         for index, replacement_dict in enumerate(replacement_dicts):
             if not isinstance(replacement_dict, dict):
                 raise GitOpsException(f"Item 'previewConfig.replace.[{index}]' should be a object in GitOps config!")
@@ -88,9 +67,9 @@ class GitOpsConfig:
             replacements.append(Replacement(path=path, variable=variable))
 
         return GitOpsConfig(
-            application_name=get_string_value("deploymentConfig.applicationName"),
-            team_config_org=get_string_value("deploymentConfig.org"),
-            team_config_repo=get_string_value("deploymentConfig.repository"),
-            route_host_template=get_string_value("previewConfig.route.host.template"),
+            application_name=yaml_file.get_string_value("deploymentConfig.applicationName"),
+            team_config_org=yaml_file.get_string_value("deploymentConfig.org"),
+            team_config_repo=yaml_file.get_string_value("deploymentConfig.repository"),
+            route_host_template=yaml_file.get_string_value("previewConfig.route.host.template"),
             replacements=replacements,
         )
