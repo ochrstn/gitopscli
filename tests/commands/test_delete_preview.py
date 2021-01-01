@@ -8,6 +8,7 @@ from gitopscli.gitops_config import GitOpsConfig
 from gitopscli.git_api import GitRepo, GitRepoApi, GitRepoApiFactory, GitProvider
 from gitopscli.gitops_exception import GitOpsException
 from gitopscli.commands.delete_preview import DeletePreviewCommand, load_gitops_config
+from gitopscli.preview_api.preview_config import PreviewConfig
 from .mock_mixin import MockMixin
 
 
@@ -25,13 +26,21 @@ class DeletePreviewCommandTest(MockMixin, unittest.TestCase):
         self.logging_mock.info.return_value = None
 
         self.load_gitops_config_mock = self.monkey_patch(load_gitops_config)
-        self.load_gitops_config_mock.return_value = GitOpsConfig(
+        file_content_replacements = {"values.yaml": []}
+        preview_config = PreviewConfig(
+            host="www.foo.bar",
             application_name="APP",
-            team_config_org="TEAM_CONFIG_ORG",
-            team_config_repo="TEAM_CONFIG_REPO",
-            route_host_template="www.foo.bar",
-            replacements=[],
+            template_git_org="TEAM_CONFIG_ORG",
+            template_git_repo="TEAM_CONFIG_REPO",
+            template_path=None,
+            template_branch=None,
+            target_git_org="TEAM_CONFIG_ORG",
+            target_git_repo="TEAM_CONFIG_REPO",
+            target_path=None,
+            target_branch=None,
+            file_content_replacements=file_content_replacements,
         )
+        self.load_gitops_config_mock.return_value = GitOpsConfig(api_version="v0", preview_config=preview_config)
 
         self.git_repo_api_mock = self.create_mock(GitRepoApi)
         self.git_repo_api_mock.create_pull_request.return_value = GitRepoApi.PullRequestIdAndUrl(

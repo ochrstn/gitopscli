@@ -19,7 +19,7 @@ class GitOpsConfigLoaderTest(MockMixin, unittest.TestCase):
         self.init_mock_manager(load_gitops_config)
 
         self.gitops_config_mock = self.monkey_patch(GitOpsConfig)
-        self.gitops_config_mock.from_yaml_file.return_value = self.gitops_config_mock
+        self.gitops_config_mock.from_yaml_file_v0.return_value = self.gitops_config_mock
 
         self.yaml_file_mock = self.monkey_patch(YamlFile)
         self.yaml_file_mock.read.return_value = {"dummy": "gitopsconfig"}
@@ -51,7 +51,7 @@ class GitOpsConfigLoaderTest(MockMixin, unittest.TestCase):
             call.GitRepo.clone(),
             call.GitRepo.get_full_file_path(".gitops.config.yaml"),
             call.YamlFile.read("/repo-dir/.gitops.config.yaml"),
-            call.GitOpsConfig.from_yaml_file({"dummy": "gitopsconfig"}),
+            call.GitOpsConfig.from_yaml_file_v0({"dummy": "gitopsconfig"}),
         ]
 
     def test_file_not_found(self):

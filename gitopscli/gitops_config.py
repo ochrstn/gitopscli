@@ -1,42 +1,22 @@
-import hashlib
 from dataclasses import dataclass
 from typing import List, Any
 
 from gitopscli.gitops_exception import GitOpsException
+from gitopscli.preview_api.preview_config import PreviewConfig
 from gitopscli.preview_api.replacement import Replacement
 
 
 @dataclass(frozen=True)
 class GitOpsConfig:
-    application_name: str
-    team_config_org: str
-    team_config_repo: str
-    route_host_template: str
-    replacements: List[Replacement]
+    api_version: str
+    preview_config: PreviewConfig
 
     def __post_init__(self) -> None:
-        assert isinstance(self.application_name, str), "application_name of wrong type!"
-        assert isinstance(self.team_config_org, str), "team_config_org of wrong type!"
-        assert isinstance(self.team_config_repo, str), "team_config_repo of wrong type!"
-        assert isinstance(self.route_host_template, str), "route_host_template of wrong type!"
-        assert isinstance(self.replacements, list), "replacements of wrong type!"
-        for index, replacement in enumerate(Replacement.Variable):
-            assert isinstance(replacement, Replacement.Variable), f"replacement[{index}] of wrong type!"
-
-    def get_route_host(self, preview_id: str) -> str:
-        hashed_preview_id = self.__create_hashed_preview_id(preview_id)
-        return self.route_host_template.replace("{SHA256_8CHAR_BRANCH_HASH}", hashed_preview_id)
-
-    def get_preview_namespace(self, preview_id: str) -> str:
-        hashed_preview_id = self.__create_hashed_preview_id(preview_id)
-        return f"{self.application_name}-{hashed_preview_id}-preview"
+        assert isinstance(self.api_version, str), "api_version of wrong type!"
+        assert isinstance(self.preview_config, PreviewConfig), "preview_config of wrong type!"
 
     @staticmethod
-    def __create_hashed_preview_id(preview_id: str) -> str:
-        return hashlib.sha256(preview_id.encode("utf-8")).hexdigest()[:8]
-
-    @staticmethod
-    def from_yaml_file(yaml_file: Any) -> "GitOpsConfig":
+    def from_yaml_file_v0(yaml_file: Any) -> "GitOpsConfig":
         replacements: List[Replacement] = []
         replacement_dicts = yaml_file.get_list_value("previewConfig.replace")
         for index, replacement_dict in enumerate(replacement_dicts):
@@ -65,11 +45,20 @@ class GitOpsConfig:
                     f"GitOps config: {possible_values}"
                 ) from ex
             replacements.append(Replacement(path=path, variable=variable))
+            application_name = yaml_file.get_string_value("deploymentConfig.applicationName")
+            file_content_replacements = {"values.yaml": replacements}
+            preview_config = PreviewConfig(
+                host=yaml_file.get_string_value("previewConfig.route.host.template"),
+                application_name=application_name,
+                template_git_org=yaml_file.get_string_value("deploymentConfig.org"),
+                template_git_repo=yaml_file.get_string_value("deploymentConfig.repository"),
+                template_path=None,
+                template_branch=None,
+                target_git_org=yaml_file.get_string_value("deploymentConfig.org"),
+                target_git_repo=yaml_file.get_string_value("deploymentConfig.repository"),
+                target_path=None,
+                target_branch=None,
+                file_content_replacements=file_content_replacements,
+            )
 
-        return GitOpsConfig(
-            application_name=yaml_file.get_string_value("deploymentConfig.applicationName"),
-            team_config_org=yaml_file.get_string_value("deploymentConfig.org"),
-            team_config_repo=yaml_file.get_string_value("deploymentConfig.repository"),
-            route_host_template=yaml_file.get_string_value("previewConfig.route.host.template"),
-            replacements=replacements,
-        )
+        return GitOpsConfig(api_version="v0", preview_config=preview_config)

@@ -42,7 +42,7 @@ class CreatePreviewCommand(Command):
 
     def execute(self,) -> None:
         gitops_config = self.__get_gitops_config()
-        route_host = gitops_config.get_route_host(self.__args.preview_id)
+        route_host = gitops_config.preview_config.get_rendered_host(self.__args.preview_id)
 
         team_config_git_repo_api = self.__create_team_config_git_repo_api(gitops_config)
         with GitRepo(team_config_git_repo_api) as team_config_git_repo:
@@ -62,7 +62,7 @@ class CreatePreviewCommand(Command):
             self.__commit_and_push(
                 team_config_git_repo,
                 f"{'Create new' if created_new_preview else 'Update'} preview environment for "
-                f"'{gitops_config.application_name}' and git hash '{self.__args.git_hash}'.",
+                f"'{gitops_config.preview_config.application_name}' and git hash '{self.__args.git_hash}'.",
             )
 
         if created_new_preview:
@@ -78,17 +78,19 @@ class CreatePreviewCommand(Command):
         return load_gitops_config(self.__args, self.__args.organisation, self.__args.repository_name)
 
     def __create_team_config_git_repo_api(self, gitops_config: GitOpsConfig) -> GitRepoApi:
-        return GitRepoApiFactory.create(self.__args, gitops_config.team_config_org, gitops_config.team_config_repo)
+        return GitRepoApiFactory.create(
+            self.__args, gitops_config.preview_config.template_git_org, gitops_config.preview_config.template_git_repo
+        )
 
     def __create_preview_from_template_if_not_existing(self, git_repo: GitRepo, gitops_config: GitOpsConfig) -> bool:
-        preview_namespace = gitops_config.get_preview_namespace(self.__args.preview_id)
+        preview_namespace = gitops_config.preview_config.get_preview_name(self.__args.preview_id)
         full_preview_folder_path = git_repo.get_full_file_path(preview_namespace)
         preview_env_already_exist = os.path.isdir(full_preview_folder_path)
         if preview_env_already_exist:
             logging.info("Use existing folder for preview: %s", preview_namespace)
             return False
         logging.info("Create new folder for preview: %s", preview_namespace)
-        preview_template_folder_name = f".preview-templates/{gitops_config.application_name}"
+        preview_template_folder_name = f".preview-templates/{gitops_config.preview_config.application_name}"
         full_preview_template_folder_path = git_repo.get_full_file_path(preview_template_folder_name)
         if not os.path.isdir(full_preview_template_folder_path):
             raise GitOpsException(f"The preview template folder does not exist: {preview_template_folder_name}")
@@ -101,16 +103,18 @@ class CreatePreviewCommand(Command):
 
     def __get_value_for_variable(self, gitops_config: GitOpsConfig, variable: Replacement.Variable) -> str:
         mapping: Dict[Replacement.Variable, Callable[[], str]] = {
-            Replacement.Variable.ROUTE_HOST: lambda: gitops_config.get_route_host(self.__args.preview_id),
+            Replacement.Variable.ROUTE_HOST: lambda: gitops_config.preview_config.get_rendered_host(
+                self.__args.preview_id
+            ),
             Replacement.Variable.GIT_COMMIT: lambda: self.__args.git_hash,
         }
         assert set(mapping.keys()) == set(Replacement.Variable), "variable to value mapping not complete"
         return mapping[variable]()
 
     def __replace_values(self, git_repo: GitRepo, gitops_config: GitOpsConfig) -> bool:
-        preview_folder_name = gitops_config.get_preview_namespace(self.__args.preview_id)
+        preview_folder_name = gitops_config.preview_config.get_preview_name(self.__args.preview_id)
         any_value_replaced = False
-        for replacement in gitops_config.replacements:
+        for replacement in gitops_config.preview_config.file_content_replacements.get("values.yaml"):
             replacement_value = self.__get_value_for_variable(gitops_config, replacement.variable)
             value_replaced = self.__update_yaml_file(
                 git_repo, f"{preview_folder_name}/values.yaml", replacement.path, replacement_value,

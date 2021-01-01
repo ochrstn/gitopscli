@@ -22,7 +22,7 @@ class GitOpsConfigTest(unittest.TestCase):
         self.yaml_file.yaml
 
     def load(self) -> GitOpsConfig:
-        return GitOpsConfig.from_yaml_file(self.yaml_file)
+        return GitOpsConfig.from_yaml_file_v0(self.yaml_file)
 
     def assert_load_error(self, error_msg: str) -> None:
         with pytest.raises(GitOpsException) as ex:
@@ -31,7 +31,7 @@ class GitOpsConfigTest(unittest.TestCase):
 
     def test_application_name(self):
         config = self.load()
-        self.assertEqual(config.application_name, "my-app")
+        self.assertEqual(config.preview_config.application_name, "my-app")
 
     def test_application_name_missing(self):
         del self.yaml_file.yaml["deploymentConfig"]["applicationName"]
@@ -43,7 +43,8 @@ class GitOpsConfigTest(unittest.TestCase):
 
     def test_team_config_org(self):
         config = self.load()
-        self.assertEqual(config.team_config_org, "my-org")
+        self.assertEqual(config.preview_config.template_git_org, "my-org")
+        self.assertEqual(config.preview_config.target_git_org, "my-org")
 
     def test_team_config_org_missing(self):
         del self.yaml_file.yaml["deploymentConfig"]["org"]
@@ -55,7 +56,8 @@ class GitOpsConfigTest(unittest.TestCase):
 
     def test_team_config_repo(self):
         config = self.load()
-        self.assertEqual(config.team_config_repo, "my-repo")
+        self.assertEqual(config.preview_config.template_git_repo, "my-repo")
+        self.assertEqual(config.preview_config.target_git_repo, "my-repo")
 
     def test_team_config_repo_missing(self):
         del self.yaml_file.yaml["deploymentConfig"]["repository"]
@@ -67,7 +69,7 @@ class GitOpsConfigTest(unittest.TestCase):
 
     def test_route_host_template(self):
         config = self.load()
-        self.assertEqual(config.route_host_template, "my-host-template")
+        self.assertEqual(config.preview_config.host, "my-host-template")
 
     def test_route_missing(self):
         del self.yaml_file.yaml["previewConfig"]["route"]
@@ -87,12 +89,14 @@ class GitOpsConfigTest(unittest.TestCase):
 
     def test_replacements(self):
         config = self.load()
+        replacements = [
+            Replacement(path="a.b", variable=Replacement.Variable.ROUTE_HOST),
+            Replacement(path="c.d", variable=Replacement.Variable.GIT_COMMIT),
+        ]
+        file_content_replacements = {"values.yaml": replacements}
+
         self.assertEqual(
-            config.replacements,
-            [
-                Replacement(path="a.b", variable=Replacement.Variable.ROUTE_HOST),
-                Replacement(path="c.d", variable=Replacement.Variable.GIT_COMMIT),
-            ],
+            config.preview_config.file_content_replacements, file_content_replacements,
         )
 
     def test_replacements_missing(self):
