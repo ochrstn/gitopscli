@@ -42,33 +42,33 @@ class CreatePreviewCommand(Command):
 
     def execute(self,) -> None:
         gitops_config = self.__get_gitops_config()
-        route_host = gitops_config.preview_config.get_rendered_host(self.__args.preview_id)
+        host = gitops_config.preview_config.get_rendered_host(self.__args.preview_id)
 
-        team_config_git_repo_api = self.__create_team_config_git_repo_api(gitops_config)
-        with GitRepo(team_config_git_repo_api) as team_config_git_repo:
-            team_config_git_repo.clone()
+        template_git_repo_api = self.__create_template_git_repo_api(gitops_config)
+        with GitRepo(template_git_repo_api) as template_git_repo:
+            template_git_repo.clone()
 
             created_new_preview = self.__create_preview_from_template_if_not_existing(
-                team_config_git_repo, gitops_config
+                template_git_repo, gitops_config
             )
 
-            any_values_replaced = self.__replace_values(team_config_git_repo, gitops_config)
+            any_values_replaced = self.__replace_values(template_git_repo, gitops_config)
 
             if not created_new_preview and not any_values_replaced:
-                self.__deployment_already_up_to_date_callback(route_host)
+                self.__deployment_already_up_to_date_callback(host)
                 logging.info("The preview is already up-to-date. I'm done here.")
                 return
 
             self.__commit_and_push(
-                team_config_git_repo,
+                template_git_repo,
                 f"{'Create new' if created_new_preview else 'Update'} preview environment for "
                 f"'{gitops_config.preview_config.application_name}' and git hash '{self.__args.git_hash}'.",
             )
 
         if created_new_preview:
-            self.__deployment_created_callback(route_host)
+            self.__deployment_created_callback(host)
         else:
-            self.__deployment_updated_callback(route_host)
+            self.__deployment_updated_callback(host)
 
     def __commit_and_push(self, git_repo: GitRepo, message: str) -> None:
         git_repo.commit(self.__args.git_user, self.__args.git_email, message)
@@ -77,7 +77,7 @@ class CreatePreviewCommand(Command):
     def __get_gitops_config(self) -> GitOpsConfig:
         return load_gitops_config(self.__args, self.__args.organisation, self.__args.repository_name)
 
-    def __create_team_config_git_repo_api(self, gitops_config: GitOpsConfig) -> GitRepoApi:
+    def __create_template_git_repo_api(self, gitops_config: GitOpsConfig) -> GitRepoApi:
         return GitRepoApiFactory.create(
             self.__args, gitops_config.preview_config.template_git_org, gitops_config.preview_config.template_git_repo
         )
