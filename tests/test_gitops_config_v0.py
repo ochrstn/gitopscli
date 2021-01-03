@@ -43,8 +43,8 @@ class GitOpsConfigTest(unittest.TestCase):
 
     def test_team_config_org(self):
         config = self.load()
-        self.assertEqual(config.preview_config.template_git_org, "my-org")
-        self.assertEqual(config.preview_config.target_git_org, "my-org")
+        self.assertEqual(config.preview_config.template.org, "my-org")
+        self.assertEqual(config.preview_config.target.org, "my-org")
 
     def test_team_config_org_missing(self):
         del self.yaml_file.yaml["deploymentConfig"]["org"]
@@ -56,8 +56,8 @@ class GitOpsConfigTest(unittest.TestCase):
 
     def test_team_config_repo(self):
         config = self.load()
-        self.assertEqual(config.preview_config.template_git_repo, "my-repo")
-        self.assertEqual(config.preview_config.target_git_repo, "my-repo")
+        self.assertEqual(config.preview_config.template.repo, "my-repo")
+        self.assertEqual(config.preview_config.target.repo, "my-repo")
 
     def test_team_config_repo_missing(self):
         del self.yaml_file.yaml["deploymentConfig"]["repository"]

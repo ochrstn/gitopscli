@@ -4,6 +4,8 @@ import unittest
 import logging
 from unittest.mock import call, PropertyMock
 import pytest
+
+from gitopscli.git_api.git_repo_path_ref import GitRepoPathRef
 from gitopscli.gitops_config import GitOpsConfig
 from gitopscli.git_api import GitRepo, GitRepoApi, GitRepoApiFactory, GitProvider
 from gitopscli.gitops_exception import GitOpsException
@@ -27,17 +29,12 @@ class DeletePreviewCommandTest(MockMixin, unittest.TestCase):
 
         self.load_gitops_config_mock = self.monkey_patch(load_gitops_config)
         file_content_replacements = {"values.yaml": []}
+        template_ref = GitRepoPathRef("", "TEAM_CONFIG_ORG", "TEAM_CONFIG_REPO", None, None)
         preview_config = PreviewConfig(
             host="www.foo.bar",
             application_name="APP",
-            template_git_org="TEAM_CONFIG_ORG",
-            template_git_repo="TEAM_CONFIG_REPO",
-            template_path=None,
-            template_branch=None,
-            target_git_org="TEAM_CONFIG_ORG",
-            target_git_repo="TEAM_CONFIG_REPO",
-            target_path=None,
-            target_branch=None,
+            template=template_ref,
+            target=template_ref,
             file_content_replacements=file_content_replacements,
         )
         self.load_gitops_config_mock.return_value = GitOpsConfig(api_version="v0", preview_config=preview_config)

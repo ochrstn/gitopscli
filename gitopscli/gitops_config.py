@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import List, Any
 
+from gitopscli.git_api.git_repo_path_ref import GitRepoPathRef
 from gitopscli.gitops_exception import GitOpsException
 from gitopscli.preview_api.preview_config import PreviewConfig
 from gitopscli.preview_api.replacement import Replacement
@@ -47,18 +48,19 @@ class GitOpsConfig:
             replacements.append(Replacement(path=path, variable=variable))
             application_name = yaml_file.get_string_value("deploymentConfig.applicationName")
             file_content_replacements = {"values.yaml": replacements}
+            template_ref = GitRepoPathRef(
+                git_url="",
+                org=yaml_file.get_string_value("deploymentConfig.org"),
+                repo=yaml_file.get_string_value("deploymentConfig.repository"),
+                branch=None,
+                path=None,
+            )
             preview_config = PreviewConfig(
                 host=yaml_file.get_string_value("previewConfig.route.host.template"),
                 application_name=application_name,
-                template_git_org=yaml_file.get_string_value("deploymentConfig.org"),
-                template_git_repo=yaml_file.get_string_value("deploymentConfig.repository"),
-                template_path=None,
-                template_branch=None,
-                target_git_org=yaml_file.get_string_value("deploymentConfig.org"),
-                target_git_repo=yaml_file.get_string_value("deploymentConfig.repository"),
-                target_path=None,
-                target_branch=None,
                 file_content_replacements=file_content_replacements,
+                template=template_ref,
+                target=template_ref,
             )
 
         return GitOpsConfig(api_version="v0", preview_config=preview_config)

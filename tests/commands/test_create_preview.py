@@ -4,6 +4,7 @@ import shutil
 import logging
 from unittest.mock import call, Mock
 
+from gitopscli.git_api.git_repo_path_ref import GitRepoPathRef
 from gitopscli.preview_api.preview_config import PreviewConfig
 from gitopscli.preview_api.replacement import Replacement
 
@@ -53,17 +54,12 @@ class CreatePreviewCommandTest(MockMixin, unittest.TestCase):
                 Replacement(path="route.host", variable=Replacement.Variable.ROUTE_HOST),
             ]
         }
+        template_ref = GitRepoPathRef("", "TEAM_CONFIG_ORG", "TEAM_CONFIG_REPO", None, None)
         preview_config = PreviewConfig(
             host="app.xy-{SHA256_8CHAR_BRANCH_HASH}.example.tld",
             application_name="my-app",
-            template_git_org="TEAM_CONFIG_ORG",
-            template_git_repo="TEAM_CONFIG_REPO",
-            template_path=None,
-            template_branch=None,
-            target_git_org="TEAM_CONFIG_ORG",
-            target_git_repo="TEAM_CONFIG_REPO",
-            target_path=None,
-            target_branch=None,
+            template=template_ref,
+            target=template_ref,
             file_content_replacements=file_content_replacements,
         )
 

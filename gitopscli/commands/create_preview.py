@@ -48,9 +48,7 @@ class CreatePreviewCommand(Command):
         with GitRepo(template_git_repo_api) as template_git_repo:
             template_git_repo.clone()
 
-            created_new_preview = self.__create_preview_from_template_if_not_existing(
-                template_git_repo, gitops_config
-            )
+            created_new_preview = self.__create_preview_from_template_if_not_existing(template_git_repo, gitops_config)
 
             any_values_replaced = self.__replace_values(template_git_repo, gitops_config)
 
@@ -79,7 +77,7 @@ class CreatePreviewCommand(Command):
 
     def __create_template_git_repo_api(self, gitops_config: GitOpsConfig) -> GitRepoApi:
         return GitRepoApiFactory.create(
-            self.__args, gitops_config.preview_config.template_git_org, gitops_config.preview_config.template_git_repo
+            self.__args, gitops_config.preview_config.template.org, gitops_config.preview_config.template.repo
         )
 
     def __create_preview_from_template_if_not_existing(self, git_repo: GitRepo, gitops_config: GitOpsConfig) -> bool:

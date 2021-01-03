@@ -55,7 +55,7 @@ class DeletePreviewCommand(Command):
 
     def __create_team_config_git_repo_api(self, gitops_config: GitOpsConfig) -> GitRepoApi:
         return GitRepoApiFactory.create(
-            self.__args, gitops_config.preview_config.template_git_org, gitops_config.preview_config.template_git_repo
+            self.__args, gitops_config.preview_config.template.org, gitops_config.preview_config.template.repo
         )
 
     def __commit_and_push(self, git_repo: GitRepo, message: str) -> None:
